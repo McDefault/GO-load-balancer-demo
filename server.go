@@ -11,10 +11,18 @@ import (
 func main() {
 	print("test")
 
-	m := make(map[string]int)
+	//producten := make(map[string]int)
+	//
+	//producten["kaas"] = 7
+	//producten["worst"] = 13
 
-	m["kaas"] = 7
-	m["worst"] = 13
+	producten := map[string]int{
+		"kaas":   5,
+		"worst":  15,
+		"apple":  5,
+		"banana": 7,
+		"cherry": 15,
+	}
 
 	fmt.Println("App running")
 
@@ -28,20 +36,20 @@ func main() {
 		return c.SendString("App running")
 	})
 
-	//api.Get("/:param", func(c *fiber.Ctx) error {
-	//	paramValue := c.Params("param")
-	//	return c.SendString("Parameter value: " + paramValue + " = " + strconv.Itoa(m[paramValue]))
-	//})
+	api.Get("/:param", func(c *fiber.Ctx) error {
+		paramValue := c.Params("param")
+		return c.SendString(strconv.Itoa(producten[paramValue]))
+	})
 
 	api.Post("/:param", func(c *fiber.Ctx) error {
 
 		paramValue := c.Params("param")
-		voorraad := m[paramValue]
+		voorraad := producten[paramValue]
 		if voorraad < 1 {
-			return c.SendString("Product: " + paramValue + " is OP!" + strconv.Itoa(m[paramValue]))
+			return c.SendString("Product: " + paramValue + " is OP! " + strconv.Itoa(producten[paramValue]))
 		}
-		m[paramValue]--
-		return c.SendString("Parameter value: " + paramValue + " = " + strconv.Itoa(m[paramValue]))
+		producten[paramValue]--
+		return c.SendString("Parameter value: " + paramValue + " = " + strconv.Itoa(producten[paramValue]))
 	})
 
 	log.Fatal(app.Listen(":5000"))
