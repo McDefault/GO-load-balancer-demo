@@ -10,25 +10,7 @@ import (
 	"time"
 )
 
-// getRandomKey is a helper function that returns a random key from the given map.
-func getRandomKey(m map[string]int) string {
-	// Create a slice to hold the keys from the map.
-	keys := make([]string, len(m))
-
-	// Fill the slice with keys from the map.
-	i := 0
-	for k := range m {
-		keys[i] = k
-		i++
-	}
-
-	// Return a random key from the slice.
-	return keys[rand.Intn(len(keys))]
-}
-
 func main() {
-	print("test")
-
 	rand.Seed(time.Now().UnixNano())
 
 	producten := []string{"kaas", "apple", "banana", "cherry", "date", "elderberry"}
@@ -37,11 +19,11 @@ func main() {
 
 		randomIndex := rand.Intn(len(producten)) // Get a random index from the array
 		randomItem := producten[randomIndex]
-		fmt.Println("Random entry:", randomIndex, randomItem)
+		fmt.Println("Buying item:", randomItem)
 
 		// get product aantal
 		product := randomItem // replace with your actual product
-		url := fmt.Sprintf("http://localhost:5000/api/%s", product)
+		url := fmt.Sprintf("http://localhost:8000/product/%s", product)
 
 		// Make a GET request
 		resp, err := http.Get(url)
@@ -63,20 +45,23 @@ func main() {
 		}
 
 		// At this point, `body` contains the raw server response
-		fmt.Println(string(body))
+		//fmt.Println(string(body))
 
 		aantal, err := strconv.Atoi(string(body))
+
+		fmt.Println("Stock item:", aantal)
 
 		// koop wanneer voorradig
 
 		if aantal < 1 {
 			fmt.Println("Error: Out of stock")
+			time.Sleep(1 * time.Second)
 
 			continue
 		} else {
 
 			// Construct the URL with the product and specify the port
-			url := fmt.Sprintf("http://localhost:5000/api/%s", product)
+			url := fmt.Sprintf("http://localhost:8000/product/%s", product)
 
 			// Define the data for the POST request
 			data := []byte(`{"productID": "123", "productName": "apple"}`)

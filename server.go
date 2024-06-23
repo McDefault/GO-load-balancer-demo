@@ -2,56 +2,53 @@ package main
 
 import (
 	"fmt"
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/cors"
-	"log"
+	"net/http"
+	"os"
 	"strconv"
+	"strings"
+	"sync"
 )
 
-func main() {
-	print("test")
+var mu sync.Mutex
+var producten = map[string]int{
+	"kaas":   10,
+	"worst":  2,
+	"apple":  3,
+	"banana": 1,
+	"cherry": 0,
+}
 
-	//producten := make(map[string]int)
-	//
-	//producten["kaas"] = 7
-	//producten["worst"] = 13
+func productHandler(w http.ResponseWriter, r *http.Request) {
+	paramValue := strings.TrimPrefix(r.URL.Path, "/product/")
+	switch r.Method {
+	case "GET":
 
-	producten := map[string]int{
-		"kaas":   5,
-		"worst":  15,
-		"apple":  5,
-		"banana": 7,
-		"cherry": 15,
-	}
+		fmt.Println("Buying item:", paramValue, producten[paramValue])
 
-	fmt.Println("App running")
+		fmt.Fprintf(w, strconv.Itoa(producten[paramValue]))
+	case "POST":
+		mu.Lock()
+		defer mu.Unlock()
 
-	app := fiber.New()
-	app.Use(cors.New())
-
-	api := app.Group("/api")
-
-	// Test handler
-	api.Get("/", func(c *fiber.Ctx) error {
-		return c.SendString("App running")
-	})
-
-	api.Get("/:param", func(c *fiber.Ctx) error {
-		paramValue := c.Params("param")
-		return c.SendString(strconv.Itoa(producten[paramValue]))
-	})
-
-	api.Post("/:param", func(c *fiber.Ctx) error {
-
-		paramValue := c.Params("param")
-		voorraad := producten[paramValue]
-		if voorraad < 1 {
-			return c.SendString("Product: " + paramValue + " is OP! " + strconv.Itoa(producten[paramValue]))
+		if producten[paramValue] < 0 {
+			fmt.Println("An error occurred: voorraad onder 0")
+			os.Exit(1) // Exit with status code 1
 		}
-		producten[paramValue]--
-		return c.SendString("Parameter value: " + paramValue + " = " + strconv.Itoa(producten[paramValue]))
-	})
+		if producten[paramValue] < 1 {
+			fmt.Fprintf(w, "Product: %s is OP! %d", paramValue, producten[paramValue])
+			fmt.Println("Error: Out of stock")
+		} else {
+			producten[paramValue]--
+			fmt.Fprintf(w, "Item bought: %s; %d, left", paramValue, producten[paramValue])
+		}
+	default:
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+	}
+}
 
-	log.Fatal(app.Listen(":5000"))
+func main() {
+	http.HandleFunc("/product/", productHandler)
 
+	fmt.Println("Server starting at http://localhost:8000")
+	http.ListenAndServe(":8000", nil)
 }
